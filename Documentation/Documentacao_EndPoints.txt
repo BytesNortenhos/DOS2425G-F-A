@@ -1,0 +1,20 @@
+Para o trabalho desta semana foi solicitado a implementação de novas propriedades nos models já criados no ultimo trabalho e novos endpoints de cada um.
+Para a realização de cada endpoint foi utilizado diferente analogias: 
+
+[Neste exemplo estamos a usar "Project" contudo aplica-se para todos os outros controllers feitos.]
+
+GetProject -> Endpoint simples com o objetivo de retornar todo o conteúdo de Project disponível.
+
+GetProject(id) -> Este endpoint permite a seleção de um Project especifico através do id, essencial para operações que necessitam acessar dados de uma lista de Project individualmente. [A implementação consiste em uma expressão lambda "model.FindIndex(u => u.Id = id) onde "u" representa cada elemento da lista, assim sendo compara o id de cada elemento da lista (u.Id) com o id imposto na implementação do endpoint (id) através de um "FindIndex".]
+
+CreateProject([FromBody]) -> O endpoint mencionado permite a criação de um novo project. [Foi utilizado "ActionResult" no método com o objetivo de conseguir interpretar informações mais detalhadas sobre a falha ou sucesso da operação. A utilização do [FromBody] tem o intuito de transformar o JSON inserido em um formato que a linguagem utilizada (C#) consigo usar diretamente. Após isso é utilizado um try-catch para auxilio na gestão de sucesso ou falha da operação, finaliza-se assim com uma ".Add" em projects passando como parâmetro o JSON inserido e já convertido (project)]
+
+UpdateProject([FromBody]) -> Endpoint com o objetivo de atualizar dados de um projeto "selecionado/escolhido". [Temos presentes o [FromBody] e o FindIndex já explicados anteriormente.
+No final "projects[index] = project" consiste na substituição projeto encontrado pelo novo objeto project com as informações atualizadas.]
+
+DeleteProject(int id) -> Este endpoint tem como finalidade de remover um projeto da lista project através de um id passado. [Esta operação segue a mesma ideologia das outras mas no final consiste em um ".RemoveAt" de projects para remover o projeto selecionado]
+
+Todos estes métodos retornam a lista com o objetivo de mostrar as implementações feitas.
+
+
+
