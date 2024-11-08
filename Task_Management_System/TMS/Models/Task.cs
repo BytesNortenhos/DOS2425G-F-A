@@ -10,4 +10,5 @@ public class TaskItem
     public DateTime DueDate { get; set; }
     public string Priority { get; set; }
     public User Assigne { get; set; }
+    public List<Comments> Comments { get; set; }
 }
