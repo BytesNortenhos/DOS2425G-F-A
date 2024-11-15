@@ -1,0 +1,25 @@
+Nesta semana tivemos como principal objetivo a instalação e documentação de uma API com o Swagger, além de implementação de relações entre objetos.
+Para a instalação do Swagger utilizamos o gerenciador de pacotes NuGet. Esta instalação envolveu 3 pacotes:
+-> Swashbuckle.AspNetCore: Pacote que permite configurar e documentar a API.
+-> Swashbuckle.AspNetCore.SwaggerGen: Pacote que permite gerar de forma automática a documentação.
+-> Swashbuckle.AspNetCore.SwaggerUI: Pacote que implementa uma interface gráfica.
+Para completar este ultimo passo adicionamos as seguintes linhas de código em "program.cs":
+-> builder.Services.AddEndpointsApiExplorer();
+-> builder.Services.AddSwaggerGen();
+-> if (app.Environment.IsDevelopment())
+   {
+    app.UseSwagger();
+    app.UseSwaggerUI();
+   }
+As mesmas tem finalidade de habilitar e configurar o Swagger.
+Após toda esta implementação executamos o projeto e automaticamente o mesmo redireciona para o endereço onde o Swagger UI está para assim conseguirmos testar os nosso endpoints.
+Podia ter sido utilizado como alternativa o NSwag ou até mesmo PostMan para verificar a veracidade dos nosso endpoints.
+
+As relações propostas foram implementadas nos respetivos Models através da definição de propriedade como representação da associação entre as classes. 
+Por exemplo "public TaskItem TaskId { get; set; }" é uma relação de "um para um" com a classe TaskItem e a respetiva classe onde foi definida como propriedade.
+Já em "public List<Comments> Comments { get; set; }" estabelece uma relação de um para muitos com a classe Comments e a respetiva classe onde foi definida como propriedade sendo esta mesma a receber a lista.
+Como alternativa pode ser utilizado o formato de chave estrangeira, assim não utiliza diretamente a classe como propriedade mas sim o identificador da mesma "public int TaskId { get; set; }".
+
+
+
+
