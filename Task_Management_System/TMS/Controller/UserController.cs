@@ -24,20 +24,20 @@ public class UserController : ControllerBase {
     [HttpGet("{id}")]
     public ActionResult<User> GetUser(int id) {
         var index = users.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("User not found!");
+        if (index == -1) return NotFound("Error: User not found!");
         
         return users[index];
     }
 
     [HttpPost]
-    public ActionResult<User> CreateUser([FromBody] User user) {
+    public ActionResult<List<User>> CreateUser([FromBody] User user) {
         try {
             users.Add(user);
         } catch {
             return null;
         }
 
-        return Created("User created!", user);
+        return Created("User created!", users);
     }
 
     [HttpPut]
@@ -52,7 +52,7 @@ public class UserController : ControllerBase {
     [HttpDelete("{id}")]
     public ActionResult<List<User>> DeleteUser(int id) {
         var index = users.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("User not found!");
+        if (index == -1) return NotFound("Error: User not found!");
 
         users.RemoveAt(index);
         return users;
