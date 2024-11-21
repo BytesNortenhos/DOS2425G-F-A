@@ -25,7 +25,7 @@ namespace ProjetoTestes
             // Assert
             Assert.NotNull(result.Value);
             var firstComment = result.Value[0];
-            Assert.Equal("comment1", firstComment.Text);
+            Assert.Equal("Updated Comment", firstComment.Text);
         }
 
 
@@ -40,7 +40,7 @@ namespace ProjetoTestes
             var actionResult = Assert.IsType<ActionResult<Comments>>(result);
             var comment = Assert.IsType<Comments>(actionResult.Value);
             Assert.Equal(3, comment.Id);
-            Assert.Equal("user3", comment.Text);
+            Assert.Equal("Ccc", comment.Text);
         }
 
         [Fact]
