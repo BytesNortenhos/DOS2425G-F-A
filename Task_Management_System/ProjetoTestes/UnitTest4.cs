@@ -25,7 +25,7 @@ namespace ProjetoTestes
             // Assert
             Assert.NotNull(result.Value);
             var firstTask = result.Value[0];
-            Assert.Equal("task1", firstTask.Title);
+            Assert.Equal("Task 1", firstTask.Title);
         }
 
 
@@ -37,7 +37,7 @@ namespace ProjetoTestes
             var result = TasksController.GetTask(3);
 
             // Assert
-            var actionResult = Assert.IsType<ActionResult<Task>>(result);
+            var actionResult = Assert.IsType<ActionResult<TaskItem>>(result);
             var task = Assert.IsType<TaskItem>(actionResult.Value);
             Assert.Equal(3, task.Id);
             Assert.Equal("003", task.TicketNumber);
@@ -63,7 +63,7 @@ namespace ProjetoTestes
         {
             var newTask = new TaskItem
             {
-                Id = 5, TicketNumber = "005", Title = "Task 5", Description = "Aaa", IsCompleted = false,
+                Id = 6, TicketNumber = "005", Title = "Task 5", Description = "Aaa", IsCompleted = false,
                 DueDate = DateTime.Now.AddDays(5), Priority = "Low",
                 Assigne = new User
                     { Id = 1, UserName = "user3", Email = "3@x.com", FullName = "User 1", Role = "Admin" },
@@ -92,10 +92,10 @@ namespace ProjetoTestes
 
             var result = TasksController.CreateTask(newTask);
 
-            var actionResult = Assert.IsType<ActionResult<List<Task>>>(result);
+            var actionResult = Assert.IsType<ActionResult<List<TaskItem>>>(result);
             var createdResult = Assert.IsType<CreatedResult>(actionResult.Result);
-            Assert.Equal("User created!", createdResult.Location);
-            var tasks = Assert.IsType<List<Task>>(createdResult.Value);
+            Assert.Equal("Task created!", createdResult.Location);
+            var tasks = Assert.IsType<List<TaskItem>>(createdResult.Value);
 
             var taskFounded = TasksController.GetTask(6);
             Assert.Equal(newTask.Id, taskFounded.Value.Id);
@@ -115,7 +115,7 @@ namespace ProjetoTestes
             var updatedTask = new TaskItem()
             {
                 Id = existingTask.Id,
-                TicketNumber = "006",
+                TicketNumber = "Updated Ticket Name",
                 Title = "Task 5",
                 Description = "aaa",
                 IsCompleted = false
@@ -123,14 +123,14 @@ namespace ProjetoTestes
 
             var result = TasksController.UpdateTask(updatedTask);
 
-            var actionResult = Assert.IsType<ActionResult<List<Task>>>(result);
+            var actionResult = Assert.IsType<ActionResult<List<TaskItem>>>(result);
             var updatedTasks = Assert.IsType<List<TaskItem>>(actionResult.Value);
 
             var modifiedTask = updatedTasks.FirstOrDefault();
             Assert.NotNull(modifiedTask);
             Assert.Equal("Updated Ticket Name", modifiedTask.TicketNumber);
-            Assert.Equal("Email atualizado", modifiedTask.Title);
-            Assert.Equal("User 11", modifiedTask.Description);
+            Assert.Equal("Task 5", modifiedTask.Title);
+            Assert.Equal("aaa", modifiedTask.Description);
             Assert.False(modifiedTask.IsCompleted);
         }
 
@@ -149,7 +149,7 @@ namespace ProjetoTestes
             
             var result = TasksController.DeleteTask(taskToDelete.Value.Id);
 
-            var actionResult = Assert.IsType<ActionResult<List<Task>>>(result);
+            var actionResult = Assert.IsType<ActionResult<List<TaskItem>>>(result);
             var updatedTasks = Assert.IsType<List<TaskItem>>(actionResult.Value);
 
             Assert.DoesNotContain(updatedTasks, p => p.Id == taskToDelete.Value.Id);
