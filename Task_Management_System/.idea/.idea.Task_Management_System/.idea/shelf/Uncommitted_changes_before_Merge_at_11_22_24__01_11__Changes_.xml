@@ -1,0 +1,44 @@
+<changelist name="Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]" date="1732237875134" recycled="true" deleted="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Merge at 11/22/24, 01:11 [Changes]" />
+  <binary>
+    <option name="BEFORE_PATH" value="ProjetoTestes/obj/project.nuget.cache" />
+    <option name="AFTER_PATH" value="ProjetoTestes/obj/project.nuget.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/project.nuget.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="TMS/obj/Debug/net8.0/TMS.AssemblyInfoInputs.cache" />
+    <option name="AFTER_PATH" value="TMS/obj/Debug/net8.0/TMS.AssemblyInfoInputs.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/TMS.AssemblyInfoInputs.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="ProjetoTestes/obj/Debug/net8.0/ProjetoTestes.assets.cache" />
+    <option name="AFTER_PATH" value="ProjetoTestes/obj/Debug/net8.0/ProjetoTestes.assets.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/ProjetoTestes.assets.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="TMS/obj/Debug/net8.0/TMS.csproj.AssemblyReference.cache" />
+    <option name="AFTER_PATH" value="TMS/obj/Debug/net8.0/TMS.csproj.AssemblyReference.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/TMS.csproj.AssemblyReference.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="TMS/obj/project.nuget.cache" />
+    <option name="AFTER_PATH" value="TMS/obj/project.nuget.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/project.nuget1.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="ProjetoTestes/obj/Debug/net8.0/ProjetoTestes.AssemblyInfoInputs.cache" />
+    <option name="AFTER_PATH" value="ProjetoTestes/obj/Debug/net8.0/ProjetoTestes.AssemblyInfoInputs.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/ProjetoTestes.AssemblyInfoInputs.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="TMS/obj/Debug/net8.0/TMS.assets.cache" />
+    <option name="AFTER_PATH" value="TMS/obj/Debug/net8.0/TMS.assets.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/TMS.assets.cache" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" value="ProjetoTestes/obj/Debug/net8.0/ProjetoTestes.csproj.AssemblyReference.cache" />
+    <option name="AFTER_PATH" value="ProjetoTestes/obj/Debug/net8.0/ProjetoTestes.csproj.AssemblyReference.cache" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/.idea.Task_Management_System/.idea/shelf/Uncommitted_changes_before_Merge_at_11_22_24,_01_11_[Changes]/ProjetoTestes.csproj.AssemblyReference.cache" />
+  </binary>
+</changelist>
