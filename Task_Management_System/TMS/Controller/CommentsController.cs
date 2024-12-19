@@ -32,7 +32,7 @@ public class CommentsController : ControllerBase
     }
 
     [HttpPost]
-    public ActionResult<Comments> CreateComment([FromBody] Comments comment)
+    public ActionResult<List<Comments>> CreateComment([FromBody] Comments comment)
     {
         try
         {

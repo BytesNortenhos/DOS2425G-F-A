@@ -25,13 +25,13 @@ public class TasksController : ControllerBase
     public ActionResult<TaskItem> GetTask(int id)
     {
         var index = tasks.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("Task not found!");
+        if (index == -1) return NotFound("Error: Task not found!");
 
         return tasks[index];
     }
 
     [HttpPost]
-    public ActionResult<TaskItem> CreateTask([FromBody] TaskItem task)
+    public ActionResult<List<TaskItem>> CreateTask([FromBody] TaskItem task)
     {
         try
         {
@@ -59,7 +59,7 @@ public class TasksController : ControllerBase
     public ActionResult<List<TaskItem>> DeleteTask(int id)
     {
         var index = tasks.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("Task not found!");
+        if (index == -1) return NotFound("Error: Task not found!");
 
         tasks.RemoveAt(index);
         return tasks;

@@ -8,6 +8,6 @@ build_property.PlatformNeutralAssembly =
 build_property.EnforceExtendedAnalyzerRules = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = ProjetoTestes
-build_property.ProjectDir = C:\Users\joaoc\OneDrive - Instituto Superior de Engenharia do Porto\Desktop\DOS\Task_Management_System\ProjetoTestes\
+build_property.ProjectDir = /Users/samu/Desktop/CTeSP/ano2/DOS/DOS2425G-F-A/Task_Management_System/ProjetoTestes/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
