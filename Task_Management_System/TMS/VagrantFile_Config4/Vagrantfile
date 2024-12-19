@@ -6,12 +6,12 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 Vagrant.configure("2") do |config|
+  config.vm.box = "gusztavvargadr/sql-server"
+  config.vm.box_version = "2019.2102.2409"
 
-    config.vm.box = "gusztavvargadr/sql-server"
-    config.vm.box_version = "2019.2102.2409"
-
-    config.vm.provider "virtualbox" do |vb|
-        vb.memory = 2048  # Define a memória da máquina virtual
+   config.vm.provider "virtualbox" do |vb|
+        vb.memory = 2048
     end
 
+ config.vm.network "private_network", type: "dhcp", virtualbox__intnet: true
 end
