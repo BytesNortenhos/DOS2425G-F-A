@@ -1,0 +1,55 @@
+Aviso: A máquina virtual foi definida para VirtualBox pois um dos elementos estava a ter problemas com o Hyper-V. 
+
+Config 1:
+
+Nesta situação, foram configurados dois tipos de conexão: uma privada e uma pública.
+
+A rede private_network isola a máquina virtual (VM), permitindo o acesso apenas aos dispositivos na mesma rede local. Nesse caso, o host não pode acessar diretamente a VM a partir dessa rede privada. A VM obtém um endereço IP automaticamente dessa rede local por meio de DHCP.
+
+Já a rede public_network conecta a VM diretamente à rede física do host, que, por sua vez, está conectada à Internet. A principal diferença entre private_network e public_network é que, na public_network, a VM compartilha a conexão de rede do host, estando, portanto, na mesma rede física e acessível à Internet.
+
+Para cesso a internet também poderia ter sido utilizado um tipo de conexão NAT:
+"config.vm.network "forwarded_port", guest: 80, host: 8080"
+
+Config 2:
+
+Para corresponder ao quesitos pedidos começamos por configurar a rede para ser uma rede privada entre as máquinas virtuais, o que significa que a máquina de teste e a máquina que tem acesso a ela eventualmente estarão na mesma rede local.
+
+Posteriormente "config.vm.provision "shell", inline: <<-SHELL" para executar comandos na máquina virtual após a sua criação. Dentro do bloco em si colocamos a ferramenta iptables com o intuito de manipular o firewall da máquina virtual.
+Os comandos utilizados consistem em permitir o acesso à máquina de teste apenas a partir do IP 192.168.1.12 (para isso assumimos que a outra máquina virtual tenha esse IP) e "-j DROP" para bloqueio de todos os outros acessos à máquina de teste, incluindo da internet e do host.
+
+Config 3:
+
+Para a Conf 3, optou-se por simplificar ao utilizar uma conexão do tipo NAT.
+
+Com a configuração de rede NAT, a VM terá acesso à internet, mas estará isolada do host, da rede local e de outras VMs no mesmo host, garantindo assim o máximo de isolamento possível. Quando a rede é configurada como NAT, a máquina virtual compartilha a conexão de rede do host, mas não é visível na rede externa. Isso significa que o host e outras VMs não podem acessar diretamente a VM, mas a máquina virtual pode acessar a internet por meio da conexão NAT.
+
+No VirtualBox, NAT é configurada de forma implícita quando não se define um tipo de rede específico.
+
+Config 4:
+
+Neste tópico utilizamos o tipo de conexão "Internal_Network".
+
+Ao usar "internal_network", as VMs podem se comunicar entre si, mas elas não terão acesso à rede externa (incluindo a internet) nem ao host ou a qualquer outra rede local.
+
+
+
+Questão 1: 
+
+Existem duas opções que podem ser consideradas nesta situação: Internal Network e Host-Only. No entanto, consideramos que a mais apropriada é a Internal Network, pois garante que apenas as máquinas virtuais se comuniquem entre si, sem qualquer tipo de conexão com o host, redes externas nem a outro tipo de redes fisicas, sendo assim garante um ambiente totalmente isolado.
+
+Questão 2:
+
+(Caso "qualquer acesso a rede/internet" seja qualquer tipo de rede tanto interna como externa):
+
+Nesta situação poderíamos utilizar "Not Attached" com o intuito de isolar por completo a VM. Este tipo de conexão é ideal para ambientes de desenvolvimento onde não há necessidade de interação com outras máquinas ou serviços, garante assim uma maior segurança e evita a possiblidade de vazamento de informação.
+
+Embora "Internal Network" e "Host-Only" possam isolar a VM da internet, ambas ainda configuram interfaces de rede ativas. Isso quer dizer que permite comunicação entre VMs ou Host.
+
+(Caso "qualquer acesso a rede/internet" seja compreendido como sem acesso a internet):
+
+É importante analisar a situação desejada:
+Se for necessário estabelecer comunicação entre a máquina virtual e o Host, sem acesso a internet, utilizamos Host-Only.
+Caso seja necessário garantir um isolamento completo em relação ao Host, permitindo apenas a comunicação entre máquinas virtuais utilizamos Internal-Network.
+
+Ambas garantem que a máquina virtual não tenha acesso à internet por padrão.
