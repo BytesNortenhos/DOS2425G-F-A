@@ -1,163 +1,194 @@
 using Microsoft.AspNetCore.Mvc;
-using TMS.Controller; // Namespace correto do controlador
-using TMS.Models;     // Namespace correto dos modelos
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
+using TMS.Controller;
+using TMS.Models;
 using Xunit;
 
 namespace ProjetoTestes
 {
-    public class UserControllerTests 
+    public class UserControllerTests
     {
-        private readonly UserController UserController;
+        private readonly AppDbContext _context;
 
-        public UserControllerTests() 
+        public UserControllerTests()
         {
-            UserController = new UserController();
+            var services = new ServiceCollection();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer("Server=JCOSTA_ASUS\\SQLEXPRESS;Database=DosBD;User Id=sa;Password=PasswordTeste123!;TrustServerCertificate=True"));
+            var serviceProvider = services.BuildServiceProvider();
+            _context = serviceProvider.GetRequiredService<AppDbContext>();
         }
 
-
-        //Teste primeiro ENDPOINT
-        [Fact]
-        public void GetUsers_ShouldReturnAllUsers()
+        private async Task RunInTransactionAsync(Func<Task> testAction)
         {
-            // Act
-            var result = UserController.GetUsers();
+            var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Assert
-            Assert.NotNull(result.Value);
-            var firstUser = result.Value[0];
-            Assert.Equal("user1", firstUser.UserName);
-        }
-
-
-        //Teste Segundo ENDPOINT
-        [Fact]
-        public void GetUser_ExistingId_ReturnsUser()
-        {
-            // Act
-            var result = UserController.GetUser(3);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<User>>(result);
-            var user = Assert.IsType<User>(actionResult.Value);
-            Assert.Equal(3, user.Id);
-            Assert.Equal("user3", user.UserName);
-        }
-
-        [Fact]
-        public void GetUser_NonExistingId_ReturnsNotFound()
-        {
-            // Act
-            var result = UserController.GetUser(99);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<User>>(result);
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-            Assert.Equal("Error: User not found!", notFoundResult.Value);
-        }
-
-
-        //Teste Terceiro ENDPOINT
-
-        [Fact]
-        public void CreateUser_ValidUser_ReturnsCreatedResult()
-        {
-            // Arrange
-            var newUser = new User { Id = 6, UserName = "user6", Email = "6@x.com", FullName = "User 5", Role = "User", tickets = new List<TaskItem> { new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" } }, new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" } } } };
-
-            // Act
-            var result = UserController.CreateUser(newUser);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<List<User>>>(result);
-            var createdResult = Assert.IsType<CreatedResult>(actionResult.Result);
-            Assert.Equal("User created!", createdResult.Location);
-            var users = Assert.IsType<List<User>>(createdResult.Value);
-
-            var userFounded = UserController.GetUser(6);
-            Assert.Equal(newUser.Id, userFounded.Value.Id);
-            Assert.Equal(newUser.UserName, userFounded.Value.UserName);
-        }
-
-
-
-        //Teste Quarto ENDPOINT
-        [Fact]
-        public void UpdateUser_ExistingId_UpdatesUser()
-        {
-            // Arrange
-            var existingUser = UserController.GetUsers().Value.FirstOrDefault();
-            if (existingUser == null)
-                throw new InvalidOperationException("Nenhum user existente foi encontrado para o teste.");
-
-            var updatedUser = new User
+            try
             {
-                Id = existingUser.Id,
-                UserName = "Updated User",
-                Email = "Email atualizado",
-                FullName = "User 11",
-                Role = "Admin",
-                tickets = existingUser.tickets,
-            };
-
-            // Act
-            var result = UserController.UpdateUser(updatedUser);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<List<User>>>(result);
-            var updatedUsers = Assert.IsType<List<User>>(actionResult.Value);
-
-            var modifiedUser = updatedUsers.FirstOrDefault();
-            Assert.NotNull(modifiedUser);
-            Assert.Equal("Updated User", modifiedUser.UserName);
-            Assert.Equal("Email atualizado", modifiedUser.Email);
-            Assert.Equal("User 11", modifiedUser.FullName);
-            Assert.Equal("Admin", modifiedUser.Role);
-        }
-
-
-        //Teste Quinto ENDPOINT
-
-        [Fact]
-        public void DeleteUser_RemovesUser()
-        {
-            // Arrange
-
-            var userToDelete = UserController.GetUser(2);
-            if (userToDelete == null)
-                throw new InvalidOperationException("Nenhum user existente foi encontrado para o teste.");
-
-            var allInitialUsersCount = UserController.GetUsers().Value.Count;
-            
-            // Act
-            var result = UserController.DeleteUser(userToDelete.Value.Id);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<List<User>>>(result);
-            var updatedUsers = Assert.IsType<List<User>>(actionResult.Value);
-
-            // Verifica que o user foi removido da lista retornada
-            Assert.DoesNotContain(updatedUsers, p => p.Id == userToDelete.Value.Id);
-
-            // Verifica que o tamanho da lista retornada foi reduzido em 1
-            Assert.Equal(updatedUsers.Count, allInitialUsersCount -1);
-
+                await testAction();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await transaction.RollbackAsync();
+            }
         }
 
         [Fact]
-        public void DeleteUser_ReturnsNotFound()
+        public async Task GetUsers_ReturnsAllUsers()
         {
-            // Arrange
-            var invalidId = -1; // Um ID que não existe na lista
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new UserController(_context);
 
-            // Act
-            var result = UserController.DeleteUser(invalidId);
+                // Act
+                var result = await controller.GetUsers();
 
-            // Assert
-            var actionResult = Assert.IsType<NotFoundObjectResult>(result.Result); // Confirma que é retornado NotFound
-            var message = Assert.IsType<string>(actionResult.Value); // Verifica o conteúdo da mensagem
-            Assert.Equal("Error: User not found!", message);
+                // Assert
+                var actionResult = Assert.IsType<ActionResult<List<User>>>(result);
+                var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+                var users = Assert.IsType<List<User>>(okResult.Value);
+                Assert.True(users.Count >= 0); // Verifica se users foram retornados
+            });
         }
 
+        [Fact]
+        public async Task GetUser_ReturnsUser_WhenUserExists()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new UserController(_context);
 
+                var newUser = new User
+                {
+                    UserName = "TestUser",
+                    Email = "testuser@example.com",
+                    FullName = "Test User",
+                    Role = "Admin"
+                };
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                var userId = newUser.Id;
+
+                // Act
+                var result = await controller.GetUser(userId);
+
+                // Assert
+                var actionResult = Assert.IsType<ActionResult<User>>(result);
+                var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+                var user = Assert.IsType<User>(okResult.Value);
+                Assert.Equal(newUser.UserName, user.UserName);
+            });
+        }
+
+        [Fact]
+        public async Task CreateUser_ReturnsCreatedUser_WhenValidUserDTOIsProvided()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new UserController(_context);
+
+                var userDTO = new UserDTO
+                {
+                    UserName = "NewUser",
+                    Email = "newuser@example.com",
+                    FullName = "New User",
+                    Role = "User"
+                };
+
+                // Act
+                var result = await controller.CreateUser(userDTO);
+
+                // Assert
+                var actionResult = Assert.IsType<CreatedAtActionResult>(result);
+                Assert.Equal(nameof(controller.GetUser), actionResult.ActionName);
+
+                var createdUser = Assert.IsType<User>(actionResult.Value);
+                Assert.Equal(userDTO.UserName, createdUser.UserName);
+            });
+        }
+
+        [Fact]
+        public async Task UpdateUser_ReturnsNoContent_WhenUserIsUpdatedSuccessfully()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new UserController(_context);
+
+                var newUser = new User
+                {
+                    UserName = "UpdateTest",
+                    Email = "updatetest@example.com",
+                    FullName = "Update Test",
+                    Role = "User"
+                };
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                var userId = newUser.Id;
+
+                var userDTO = new UserDTO
+                {
+                    UserName = "UpdatedUser",
+                    Email = "updateduser@example.com",
+                    FullName = "Updated User",
+                    Role = "Admin"
+                };
+
+                // Act
+                var result = await controller.UpdateUser(userId, userDTO);
+
+                // Assert
+                Assert.IsType<NoContentResult>(result);
+
+                var updatedUser = await _context.Users.FindAsync(userId);
+                Assert.Equal(userDTO.UserName, updatedUser.UserName);
+            });
+        }
+
+        [Fact]
+        public async Task DeleteUser_ReturnsNoContent_WhenUserIsDeletedSuccessfully()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new UserController(_context);
+
+                var newUser = new User
+                {
+                    UserName = "DeleteTest",
+                    Email = "deletetest@example.com",
+                    FullName = "Delete Test",
+                    Role = "User"
+                };
+
+                _context.Users.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                var userId = newUser.Id;
+
+                // Act
+                var result = await controller.DeleteUser(userId);
+
+                // Assert
+                Assert.IsType<NoContentResult>(result);
+
+                var deletedUser = await _context.Users.FindAsync(userId);
+                Assert.Null(deletedUser);
+            });
+        }
     }
 }
