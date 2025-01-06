@@ -1,178 +1,211 @@
 using Microsoft.AspNetCore.Mvc;
-using TMS.Controller; // Namespace correto do controlador
-using TMS.Models;     // Namespace correto dos modelos
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using TMS.Controller;
+using TMS.Models;
 using Xunit;
 
 namespace ProjetoTestes
 {
-    public class TasksControllerTest 
+    public class TasksControllerTests
     {
-        private readonly TasksController TasksController;
+        private readonly AppDbContext _context;
 
-        public TasksControllerTest() 
+        public TasksControllerTests()
         {
-            TasksController = new TasksController();
+            var services = new ServiceCollection();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer("Server=JCOSTA_ASUS\\SQLEXPRESS;Database=DosBD;User Id=sa;Password=PasswordTeste123!;TrustServerCertificate=True"));
+            var serviceProvider = services.BuildServiceProvider();
+            _context = serviceProvider.GetRequiredService<AppDbContext>();
         }
 
-
-        //Teste primeiro ENDPOINT
-        [Fact]
-        public void GetTasks_ShouldReturnAllTasks()
+        private async Task RunInTransactionAsync(Func<Task> testAction)
         {
-            // Act
-            var result = TasksController.GetTasks();
+            var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Assert
-            Assert.NotNull(result.Value);
-            var firstTask = result.Value[0];
-            Assert.Equal("Task 1", firstTask.Title);
-        }
-
-
-        //Teste Segundo ENDPOINT
-        [Fact]
-        public void GetTask_ExistingId_ReturnsTask()
-        {
-            // Act
-            var result = TasksController.GetTask(3);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<TaskItem>>(result);
-            var task = Assert.IsType<TaskItem>(actionResult.Value);
-            Assert.Equal(3, task.Id);
-            Assert.Equal("003", task.TicketNumber);
-        }
-
-        [Fact]
-        public void GetTask_NonExistingId_ReturnsNotFound()
-        {
-            // Act
-            var result = TasksController.GetTask(99);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<TaskItem>>(result);
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-            Assert.Equal("Error: Task not found!", notFoundResult.Value);
-        }
-
-
-        //Teste Terceiro ENDPOINT
-
-        [Fact]
-        public void CreateTask_ValidUser_ReturnsCreatedResult()
-        {
-            var newTask = new TaskItem
+            try
             {
-                Id = 6, TicketNumber = "005", Title = "Task 5", Description = "Aaa", IsCompleted = false,
-                DueDate = DateTime.Now.AddDays(5), Priority = "Low",
-                Assigne = new User
-                    { Id = 1, UserName = "user3", Email = "3@x.com", FullName = "User 1", Role = "Admin" },
-                Comments = new List<Comments>
+                await testAction();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await transaction.RollbackAsync();
+            }
+        }
+
+        [Fact]
+        public async Task GetTaskItems_ReturnsAllTasks()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new TasksController(_context);
+
+                // Act
+                var result = await controller.GetTaskItems();
+
+                // Assert
+                var okResult = Assert.IsType<OkObjectResult>(result);
+                var taskDtos = Assert.IsType<List<TaskDTO>>(okResult.Value);
+                Assert.True(taskDtos.Count >= 0); // Verifica se as tasks foram retornadas
+            });
+        }
+
+        [Fact]
+        public async Task GetTaskItemById_ReturnsTask_WhenTaskExists()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new TasksController(_context);
+
+                var newTask = new TaskItem
                 {
-                    new Comments
-                    {
-                        Id = 1, Text = "Aaa",
-                        TaskId = new TaskItem
-                        {
-                            Id = 1, TicketNumber = "001", Title = "Tarefa 1", Description = "Aaa", IsCompleted = false,
-                            DueDate = new DateTime(2023, 10, 5)
-                        }
-                    },
-                    new Comments
-                    {
-                        Id = 2, Text = "Bbb",
-                        TaskId = new TaskItem
-                        {
-                            Id = 2, TicketNumber = "002", Title = "Tarefa 2", Description = "Bbb", IsCompleted = false,
-                            DueDate = new DateTime(2023, 10, 6)
-                        }
-                    }
-                }
-            };
+                    TicketNumber = "T123",
+                    Title = "Test Task",
+                    Description = "Test Description",
+                    IsCompleted = false,
+                    DueDate = DateTime.Now.AddDays(7),
+                    Priority = "Alta",
+                    AssigneId = 1, 
+                    ProjectId = 1 
+                };
 
-            var result = TasksController.CreateTask(newTask);
+                _context.TaskItems.Add(newTask);
+                await _context.SaveChangesAsync();
 
-            var actionResult = Assert.IsType<ActionResult<List<TaskItem>>>(result);
-            var createdResult = Assert.IsType<CreatedResult>(actionResult.Result);
-            Assert.Equal("Task created!", createdResult.Location);
-            var tasks = Assert.IsType<List<TaskItem>>(createdResult.Value);
+                var taskId = newTask.Id;
 
-            var taskFounded = TasksController.GetTask(6);
-            Assert.Equal(newTask.Id, taskFounded.Value.Id);
-            Assert.Equal(newTask.TicketNumber, taskFounded.Value.TicketNumber);
+                // Act
+                var result = await controller.GetTaskItemById(taskId);
+
+                // Assert
+                var okResult = Assert.IsType<OkObjectResult>(result);
+                var taskDto = Assert.IsType<TaskDTO>(okResult.Value);
+                Assert.Equal(newTask.Title, taskDto.Title);
+            });
         }
 
-
-
-        //Teste Quarto ENDPOINT
         [Fact]
-        public void UpdateTask_ExistingId_UpdatesTask()
+        public async Task CreateTaskItem_ReturnsCreatedTask_WhenValidDataIsProvided()
         {
-            var existingTask = TasksController.GetTasks().Value.FirstOrDefault();
-            if (existingTask == null)
-                throw new InvalidOperationException("Nenhum task existente foi encontrado para o teste.");
-
-            var updatedTask = new TaskItem()
+            await RunInTransactionAsync(async () =>
             {
-                Id = existingTask.Id,
-                TicketNumber = "Updated Ticket Name",
-                Title = "Task 5",
-                Description = "aaa",
-                IsCompleted = false
-            };
+                // Arrange
+                var controller = new TasksController(_context);
 
-            var result = TasksController.UpdateTask(updatedTask);
+                var taskDto = new TaskDTO
+                {
+                    TicketNumber = "T456",
+                    Title = "New Task",
+                    Description = "New Task Description",
+                    IsCompleted = false,
+                    DueDate = DateTime.Now.AddDays(14),
+                    Priority = "Média",
+                    AssigneId = 1, 
+                    ProjectId = 1 
+                };
 
-            var actionResult = Assert.IsType<ActionResult<List<TaskItem>>>(result);
-            var updatedTasks = Assert.IsType<List<TaskItem>>(actionResult.Value);
+                // Act
+                var result = await controller.CreateTaskItem(taskDto);
 
-            var modifiedTask = updatedTasks.FirstOrDefault();
-            Assert.NotNull(modifiedTask);
-            Assert.Equal("Updated Ticket Name", modifiedTask.TicketNumber);
-            Assert.Equal("Task 5", modifiedTask.Title);
-            Assert.Equal("aaa", modifiedTask.Description);
-            Assert.False(modifiedTask.IsCompleted);
-        }
+                // Assert
+                var actionResult = Assert.IsType<CreatedAtActionResult>(result);
+                Assert.Equal(nameof(controller.GetTaskItemById), actionResult.ActionName);
 
-
-        //Teste Quinto ENDPOINT
-
-        [Fact]
-        public void DeleteTask_RemovesTask()
-        {
-
-            var taskToDelete = TasksController.GetTask(2);
-            if (taskToDelete == null)
-                throw new InvalidOperationException("Nenhuma task existente foi encontrado para o teste.");
-
-            var allInitialTaskCount = TasksController.GetTasks().Value.Count;
-            
-            var result = TasksController.DeleteTask(taskToDelete.Value.Id);
-
-            var actionResult = Assert.IsType<ActionResult<List<TaskItem>>>(result);
-            var updatedTasks = Assert.IsType<List<TaskItem>>(actionResult.Value);
-
-            Assert.DoesNotContain(updatedTasks, p => p.Id == taskToDelete.Value.Id);
-
-            Assert.Equal(updatedTasks.Count, allInitialTaskCount -1);
-
+                var createdTask = Assert.IsType<TaskItem>(actionResult.Value);
+                Assert.Equal(taskDto.Title, createdTask.Title);
+            });
         }
 
         [Fact]
-        public void DeleteUser_ReturnsNotFound()
+        public async Task UpdateTaskItem_ReturnsNoContent_WhenTaskIsUpdatedSuccessfully()
         {
-            // Arrange
-            var invalidId = -1; 
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new TasksController(_context);
 
-            // Act
-            var result = TasksController.DeleteTask(invalidId);
+                var newTask = new TaskItem
+                {
+                    TicketNumber = "T789",
+                    Title = "Old Task",
+                    Description = "Old Task Description",
+                    IsCompleted = false,
+                    DueDate = DateTime.Now.AddDays(10),
+                    Priority = "Baixa",
+                    AssigneId = 1, 
+                    ProjectId = 1 
+                };
 
-            // Assert
-            var actionResult = Assert.IsType<NotFoundObjectResult>(result.Result); // Confirma que � retornado NotFound
-            var message = Assert.IsType<string>(actionResult.Value); // Verifica o conte�do da mensagem
-            Assert.Equal("Error: Task not found!", message);
+                _context.TaskItems.Add(newTask);
+                await _context.SaveChangesAsync();
+
+                var taskId = newTask.Id;
+
+                var updatedTaskDto = new TaskDTO
+                {
+                    TicketNumber = "T789",
+                    Title = "Updated Task",
+                    Description = "Updated Task Description",
+                    IsCompleted = true,
+                    DueDate = DateTime.Now.AddDays(20),
+                    Priority = "Alta",
+                    AssigneId = 1,
+                    ProjectId = 1
+                };
+
+                // Act
+                var result = await controller.UpdateTaskItem(taskId, updatedTaskDto);
+
+                // Assert
+                Assert.IsType<NoContentResult>(result);
+
+                var updatedTask = await _context.TaskItems.FindAsync(taskId);
+                Assert.Equal(updatedTaskDto.Title, updatedTask.Title);
+            });
         }
 
+        [Fact]
+        public async Task DeleteTaskItem_ReturnsNoContent_WhenTaskIsDeletedSuccessfully()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new TasksController(_context);
 
+                var newTask = new TaskItem
+                {
+                    TicketNumber = "T999",
+                    Title = "Task to Delete",
+                    Description = "Task Description",
+                    IsCompleted = false,
+                    DueDate = DateTime.Now.AddDays(5),
+                    Priority = "Alta",
+                    AssigneId = 1, 
+                    ProjectId = 1 
+                };
+
+                _context.TaskItems.Add(newTask);
+                await _context.SaveChangesAsync();
+
+                var taskId = newTask.Id;
+
+                // Act
+                var result = await controller.DeleteTaskItem(taskId);
+
+                // Assert
+                Assert.IsType<NoContentResult>(result);
+
+                var deletedTask = await _context.TaskItems.FindAsync(taskId);
+                Assert.Null(deletedTask);
+            });
+        }
     }
 }

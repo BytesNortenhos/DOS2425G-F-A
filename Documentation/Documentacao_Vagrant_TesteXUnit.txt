@@ -1,0 +1,28 @@
+O principal objetivo desta semana foi a instalação e configuração do Vagrant, com o intuito de utilizar o motor de base de dados SQL Server. Além disso, foram realizados testes unitários nos endpoints previamente implementados.
+
+Para configurar o Vagrant, é necessário utilizar uma aplicação responsável por gerenciar máquinas virtuais que neste caso optamos por Hyper-V, embora outras opções, como o VirtualBox, também pudessem ter sido utilizadas.
+
+Para definir essa utilização temos de ter presente no projeto um ficheiro denominado de "Vagrantfile" onde irá conter todas as configurações necessárias. Este ficheiro irá permitir que o "ambiente" seja facilmente partilhado entre todos os membros que tenham acesso ao projeto.
+
+Dentro desse ficheiro, realizamos a configuração propriamente dita, onde definimos a box para o SQL Server e a sua versão ("config.vm.box" / "config.vm.box_version"), especificamos a aplicação responsável pela gestão da máquina virtual ("config.vm.provider")  e configuramos a quantidade de memória a ser atribuída à máquina (".memory"). Para finalizar utilizamos o comando "vagrant up" para iniciar o processo de criação e iniciação da máquina virtual.
+
+Outra abordagem possível seria utilizar um "Shell Script", onde seriam definidos os comandos necessários para realizar a configuração e instalação de forma automatizada.
+
+Durante o desenvolvimento dos testes unitários utilizando o framework xUnit, cada funcionalidade foi validada por meio de múltiplos testes para garantir a sua confiabilidade.
+Além do xUnit, poderiam ter sido utilizadas outras frameworks, como a NUnit ou mesmo a MSTest que é uma ferramenta oficial da Microsoft.
+
+Foram adotados cuidados específicos na execução dos testes, seguimos princípios que têm em conta a generalização e especificidade desses mesmos teste de forma a validar a flexibilidade do código.
+-> Validação do retorno: 
+	- Verifica se existe valor retornado, para assegurar que o teste não produz resultados nulos.
+
+-> Validação do tipo de retorno:
+	- Garante que o retorno seja compatível com o esperado, por exemplo, validar se o retorno é uma instância de "ActoionResult".
+	- Juntamente com o ponto anterior existe também uma validação se o retorno corresponde ao objeto tratado, como por exemplo, "Projeto".
+
+-> Validação de resposta especifica:
+	- Verificação de retornos específicos como "NotFoundObjectResult" ou "CreatedResult", utilizados em circunstâncias do sucesso ou falha de uma operação.
+
+-> Comparação de valores:
+	- Verificação e validação de resultados retornados com a utilização do "Assert.Equals()". 
+
+Também foi considerada a possibilidade de utilizar uma base de dados em memória como ferramenta para armazenar e testar os dados. No entanto, devido às entregas e outras atividades relacionadas a outras disciplinas, optou-se por manter o trabalho no formato atual. Futuramente, caso haja oportunidade, a implementação dessa abordagem será realizada, com o objetivo de aprofundar os estudos e adquirir mais conhecimento sobre o tema.

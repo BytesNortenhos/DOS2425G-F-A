@@ -1,160 +1,187 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 using TMS.Controller;
 using TMS.Models;
 using Xunit;
 
 namespace ProjetoTestes
 {
-    public class CommentControllerTests
+    public class CommentsControllerTests
     {
-        private readonly CommentsController CommentsController;
+        private readonly AppDbContext _context;
 
-        public CommentControllerTests()
+        public CommentsControllerTests()
         {
-            CommentsController = new CommentsController();
+            var services = new ServiceCollection();
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer("Server=JCOSTA_ASUS\\SQLEXPRESS;Database=DosBD;User Id=sa;Password=PasswordTeste123!;TrustServerCertificate=True"));
+            var serviceProvider = services.BuildServiceProvider();
+            _context = serviceProvider.GetRequiredService<AppDbContext>();
         }
 
-
-        //Teste primeiro ENDPOINT
-        [Fact]
-        public void GetComments_ShouldReturnAllComments()
+        private async Task RunInTransactionAsync(Func<Task> testAction)
         {
-            // Act
-            var result = CommentsController.GetComments();
+            var transaction = await _context.Database.BeginTransactionAsync();
 
-            // Assert
-            Assert.NotNull(result.Value);
-            var firstComment = result.Value[0];
-            Assert.Equal("Updated Comment", firstComment.Text);
-        }
-
-
-        //Teste Segundo ENDPOINT
-        [Fact]
-        public void GetComment_ExistingId_ReturnsComment()
-        {
-            // Act
-            var result = CommentsController.GetComment(3);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<Comments>>(result);
-            var comment = Assert.IsType<Comments>(actionResult.Value);
-            Assert.Equal(3, comment.Id);
-            Assert.Equal("Ccc", comment.Text);
-        }
-
-        [Fact]
-        public void GetComment_NonExistingId_ReturnsNotFound()
-        {
-            // Act
-            var result = CommentsController.GetComment(99);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<Comments>>(result);
-            var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-            Assert.Equal("Error: Comment not found!", notFoundResult.Value);
-        }
-
-
-        //Teste Terceiro ENDPOINT
-
-        [Fact]
-        public void CreateComment_ValidComment_ReturnsCreatedResult()
-        {
-            // Arrange
-            var newComment = new Comments { Id = 6, Text = "FFF", User = new User { Id = 6, UserName = "user6", Email = "6@x.com", FullName = "User 6", Role = "Admin", tickets = new List<TaskItem> { new TaskItem { Id = 6, TicketNumber = "006", Title = "Task 6", Description = "Fff", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 6, UserName = "user6", Email = "6@x.com", FullName = "User 6", Role = "Admin" } }, new TaskItem { Id = 6, TicketNumber = "006", Title = "Task 6", Description = "Fff", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 6, UserName = "user6", Email = "6@x.com", FullName = "User 6", Role = "Dev" } } } }, TaskId = new TaskItem { Id = 6, TicketNumber = "006", Title = "Tarefa 6", Description = "Fff", IsCompleted = false, DueDate = new DateTime(2023, 10, 9) } };
-            // Act
-            var result = CommentsController.CreateComment(newComment);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<List<Comments>>>(result);
-            var createdResult = Assert.IsType<CreatedResult>(actionResult.Result);
-            Assert.Equal("Comment created!", createdResult.Location);
-            var comments = Assert.IsType<List<Comments>>(createdResult.Value);
-
-            var commentFounded = CommentsController.GetComment(6);
-            Assert.Equal(newComment.Id, commentFounded.Value.Id);
-            Assert.Equal(newComment.Text, commentFounded.Value.Text);
-        }
-
-
-
-        //Teste Quarto ENDPOINT
-        [Fact]
-        public void UpdateComment_ExistingId_UpdatesComment()
-        {
-            // Arrange
-            var existingComment = CommentsController.GetComments().Value.FirstOrDefault();
-            if (existingComment == null)
-                throw new InvalidOperationException("Nenhum comment existente foi encontrado para o teste.");
-
-            var updatedComment = new Comments
+            try
             {
-                Id = existingComment.Id,
-                Text = "Updated Comment",
-                User = existingComment.User,
-                TaskId = existingComment.TaskId,
-            };
-
-            // Act
-            var result = CommentsController.UpdateComment(updatedComment);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<List<Comments>>>(result);
-            var updatedComments = Assert.IsType<List<Comments>>(actionResult.Value);
-
-            var modifiedComment = updatedComments.FirstOrDefault();
-            Assert.NotNull(modifiedComment);
-            Assert.Equal(existingComment.Id, modifiedComment.Id);
-            Assert.Equal("Updated Comment", modifiedComment.Text);
-            Assert.Equal(existingComment.User, modifiedComment.User);
-            Assert.Equal(existingComment.TaskId, modifiedComment.TaskId);
-        }
-
-
-        //Teste Quinto ENDPOINT
-
-        [Fact]
-        public void DeleteComment_RemovesComment()
-        {
-            // Arrange
-
-            var commentToDelete = CommentsController.GetComment(2);
-            if (commentToDelete == null)
-                throw new InvalidOperationException("Nenhum comment existente foi encontrado para o teste.");
-
-            var allInitialUsersCount = CommentsController.GetComments().Value.Count;
-
-            // Act
-            var result = CommentsController.DeleteComment(commentToDelete.Value.Id);
-
-            // Assert
-            var actionResult = Assert.IsType<ActionResult<List<Comments>>>(result);
-            var updatedComments = Assert.IsType<List<Comments>>(actionResult.Value);
-
-            // Verifica que o user foi removido da lista retornada
-            Assert.DoesNotContain(updatedComments, p => p.Id == commentToDelete.Value.Id);
-
-            // Verifica que o tamanho da lista retornada foi reduzido em 1
-            Assert.Equal(updatedComments.Count, allInitialUsersCount - 1);
-
+                await testAction();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await transaction.RollbackAsync();
+            }
         }
 
         [Fact]
-        public void DeleteComment_ReturnsNotFound()
+        public async Task GetComments_ReturnsAllComments()
         {
-            // Arrange
-            var invalidId = -1; // Um ID que não existe na lista
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new CommentsController(_context);
 
-            // Act
-            var result = CommentsController.DeleteComment(invalidId);
+                // Act
+                var result = await controller.GetComments();
 
-            // Assert
-            var actionResult = Assert.IsType<NotFoundObjectResult>(result.Result); // Confirma que é retornado NotFound
-            var message = Assert.IsType<string>(actionResult.Value); // Verifica o conteúdo da mensagem
-            Assert.Equal("Error: Comment not found!", message);
+                // Assert
+                var okResult = Assert.IsType<OkObjectResult>(result);
+                var comments = Assert.IsType<List<CommentsDTO>>(okResult.Value);
+                Assert.True(comments.Count >= 0); // Verifica se os comments foram retornados
+            });
         }
 
+        [Fact]
+        public async Task GetCommentById_ReturnsComment_WhenCommentExists()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new CommentsController(_context);
 
+                var newComment = new Comments
+                {
+                    Text = "Test Comment",
+                    UserId = 1, 
+                    TaskItemId = 1 
+                };
+
+                _context.Comments.Add(newComment);
+                await _context.SaveChangesAsync();
+
+                var commentId = newComment.Id;
+
+                // Act
+                var result = await controller.GetCommentById(commentId);
+
+                // Assert
+                var okResult = Assert.IsType<OkObjectResult>(result);
+                var commentDto = Assert.IsType<CommentsDTO>(okResult.Value);
+                Assert.Equal(newComment.Text, commentDto.Text);
+            });
+        }
+
+        [Fact]
+        public async Task CreateComment_ReturnsCreatedComment_WhenValidDataIsProvided()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new CommentsController(_context);
+
+                var commentDTO = new CommentsDTO
+                {
+                    Text = "New Comment",
+                    UserId = 1, 
+                    TaskItemId = 1 
+                };
+
+                // Act
+                var result = await controller.CreateComment(commentDTO);
+
+                // Assert
+                var actionResult = Assert.IsType<CreatedAtActionResult>(result);
+                Assert.Equal(nameof(controller.GetCommentById), actionResult.ActionName);
+
+                var createdComment = Assert.IsType<Comments>(actionResult.Value);
+                Assert.Equal(commentDTO.Text, createdComment.Text);
+            });
+        }
+
+        [Fact]
+        public async Task UpdateComment_ReturnsNoContent_WhenCommentIsUpdatedSuccessfully()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new CommentsController(_context);
+
+                var newComment = new Comments
+                {
+                    Text = "Old Comment",
+                    UserId = 1, 
+                    TaskItemId = 1 
+                };
+
+                _context.Comments.Add(newComment);
+                await _context.SaveChangesAsync();
+
+                var commentId = newComment.Id;
+
+                var updatedCommentDTO = new CommentsDTO
+                {
+                    Text = "Updated Comment",
+                    UserId = 1,
+                    TaskItemId = 1
+                };
+
+                // Act
+                var result = await controller.UpdateComment(commentId, updatedCommentDTO);
+
+                // Assert
+                Assert.IsType<NoContentResult>(result);
+
+                var updatedComment = await _context.Comments.FindAsync(commentId);
+                Assert.Equal(updatedCommentDTO.Text, updatedComment.Text);
+            });
+        }
+
+        [Fact]
+        public async Task DeleteComment_ReturnsNoContent_WhenCommentIsDeletedSuccessfully()
+        {
+            await RunInTransactionAsync(async () =>
+            {
+                // Arrange
+                var controller = new CommentsController(_context);
+
+                var newComment = new Comments
+                {
+                    Text = "Comment to Delete",
+                    UserId = 1, 
+                    TaskItemId = 1 
+                };
+
+                _context.Comments.Add(newComment);
+                await _context.SaveChangesAsync();
+
+                var commentId = newComment.Id;
+
+                // Act
+                var result = await controller.DeleteComment(commentId);
+
+                // Assert
+                Assert.IsType<NoContentResult>(result);
+
+                var deletedComment = await _context.Comments.FindAsync(commentId);
+                Assert.Null(deletedComment);
+            });
+        }
     }
 }

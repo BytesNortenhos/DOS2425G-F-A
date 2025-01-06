@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TMS.Models;
 
 namespace TMS.Controller;
@@ -7,61 +8,166 @@ namespace TMS.Controller;
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
 {
-    private static List<TaskItem> tasks = new List<TaskItem> {
-        new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" }, Comments = new List<Comments> { new Comments { Id = 1, Text = "Aaa", TaskId = new TaskItem { Id = 1, TicketNumber = "001", Title = "Tarefa 1", Description = "Aaa", IsCompleted = false, DueDate = new DateTime(2023, 10, 5) }}, new Comments { Id = 2, Text = "Bbb", TaskId = new TaskItem { Id = 2, TicketNumber = "002", Title = "Tarefa 2", Description = "Bbb", IsCompleted = false, DueDate = new DateTime(2023, 10, 6) }} } },
-        new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" }, Comments = new List<Comments> { new Comments { Id = 1, Text = "Aaa", TaskId = new TaskItem { Id = 1, TicketNumber = "001", Title = "Tarefa 1", Description = "Aaa", IsCompleted = false, DueDate = new DateTime(2023, 10, 5) }}, new Comments { Id = 2, Text = "Bbb", TaskId = new TaskItem { Id = 2, TicketNumber = "002", Title = "Tarefa 2", Description = "Bbb", IsCompleted = false, DueDate = new DateTime(2023, 10, 6) }} } },
-        new TaskItem { Id = 3, TicketNumber = "003", Title = "Task 3", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(3), Priority = "Medium", Assigne = new User { Id = 1, UserName = "user3", Email = "3@x.com", FullName = "User 1", Role = "Admin" }, Comments = new List<Comments> { new Comments { Id = 1, Text = "Aaa", TaskId = new TaskItem { Id = 1, TicketNumber = "001", Title = "Tarefa 1", Description = "Aaa", IsCompleted = false, DueDate = new DateTime(2023, 10, 5) }}, new Comments { Id = 2, Text = "Bbb", TaskId = new TaskItem { Id = 2, TicketNumber = "002", Title = "Tarefa 2", Description = "Bbb", IsCompleted = false, DueDate = new DateTime(2023, 10, 6) }} } },
-        new TaskItem { Id = 4, TicketNumber = "004", Title = "Task 4", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(4), Priority = "Low", Assigne = new User { Id = 1, UserName = "user4", Email = "2@x.com", FullName = "User 1", Role = "Dev" }, Comments = new List<Comments> { new Comments { Id = 1, Text = "Aaa", TaskId = new TaskItem { Id = 1, TicketNumber = "001", Title = "Tarefa 1", Description = "Aaa", IsCompleted = false, DueDate = new DateTime(2023, 10, 5) }}, new Comments { Id = 2, Text = "Bbb", TaskId = new TaskItem { Id = 2, TicketNumber = "002", Title = "Tarefa 2", Description = "Bbb", IsCompleted = false, DueDate = new DateTime(2023, 10, 6) }} } },
-        new TaskItem { Id = 5, TicketNumber = "005", Title = "Task 5", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(5), Priority = "Low", Assigne = new User { Id = 1, UserName = "user3", Email = "3@x.com", FullName = "User 1", Role = "Admin" }, Comments = new List<Comments> { new Comments { Id = 1, Text = "Aaa", TaskId = new TaskItem { Id = 1, TicketNumber = "001", Title = "Tarefa 1", Description = "Aaa", IsCompleted = false, DueDate = new DateTime(2023, 10, 5) }}, new Comments { Id = 2, Text = "Bbb", TaskId = new TaskItem { Id = 2, TicketNumber = "002", Title = "Tarefa 2", Description = "Bbb", IsCompleted = false, DueDate = new DateTime(2023, 10, 6) }} } },
-    };
+    private readonly AppDbContext _context;
 
+    public TasksController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    
     [HttpGet]
-    public ActionResult<List<TaskItem>> GetTasks()
+    public async Task<IActionResult> GetTaskItems()
     {
-        return tasks;
+        var taskItems = await _context.TaskItems
+            .Include(t => t.Assigne)
+            .Include(t => t.Project)
+            .Include(t => t.Comments)
+            .ToListAsync();
+
+        var taskItemDtos = taskItems.Select(t => new TaskDTO
+        {
+            Id = t.Id,
+            TicketNumber = t.TicketNumber,
+            Title = t.Title,
+            Description = t.Description,
+            IsCompleted = t.IsCompleted,
+            DueDate = t.DueDate,
+            Priority = t.Priority,
+            AssigneId = t.AssigneId,
+            Assigne = new UserDTO
+            {
+                UserName = t.Assigne.UserName,
+                Email = t.Assigne.Email,
+                FullName = t.Assigne.FullName,
+                Role = t.Assigne.Role
+            },
+            ProjectId = t.ProjectId,
+            Project = new ProjectDTO
+            {
+                ProjectName = t.Project.ProjectName,
+                Description = t.Project.Description
+            }
+        }).ToList();
+
+        return Ok(taskItemDtos);
     }
 
+    
     [HttpGet("{id}")]
-    public ActionResult<TaskItem> GetTask(int id)
+    public async Task<IActionResult> GetTaskItemById(int id)
     {
-        var index = tasks.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("Error: Task not found!");
+        var taskItem = await _context.TaskItems
+            .Include(t => t.Assigne)
+            .Include(t => t.Project)
+            .Include(t => t.Comments)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
-        return tasks[index];
+        if (taskItem == null)
+        {
+            return NotFound("TaskItem not found.");
+        }
+
+        var taskItemDto = new TaskDTO
+        {
+            Id = taskItem.Id,
+            TicketNumber = taskItem.TicketNumber,
+            Title = taskItem.Title,
+            Description = taskItem.Description,
+            IsCompleted = taskItem.IsCompleted,
+            DueDate = taskItem.DueDate,
+            Priority = taskItem.Priority,
+            AssigneId = taskItem.AssigneId,
+            Assigne = new UserDTO
+            {
+                UserName = taskItem.Assigne.UserName,
+                Email = taskItem.Assigne.Email,
+                FullName = taskItem.Assigne.FullName,
+                Role = taskItem.Assigne.Role
+            },
+            ProjectId = taskItem.ProjectId,
+            Project = new ProjectDTO
+            {
+                ProjectName = taskItem.Project.ProjectName,
+                Description = taskItem.Project.Description
+            }
+        };
+
+        return Ok(taskItemDto);
     }
 
+    
     [HttpPost]
-    public ActionResult<List<TaskItem>> CreateTask([FromBody] TaskItem task)
+    public async Task<IActionResult> CreateTaskItem([FromBody] TaskDTO taskItemDto)
     {
-        try
+        if (taskItemDto == null)
         {
-            tasks.Add(task);
-        }
-        catch
-        {
-            return null;
+            return BadRequest("TaskItem data is required.");
         }
 
-        return Created("Task created!", tasks);
+        var taskItem = new TaskItem
+        {
+            TicketNumber = taskItemDto.TicketNumber,
+            Title = taskItemDto.Title,
+            Description = taskItemDto.Description,
+            IsCompleted = taskItemDto.IsCompleted,
+            DueDate = taskItemDto.DueDate,
+            Priority = taskItemDto.Priority,
+            AssigneId = taskItemDto.AssigneId,
+            ProjectId = taskItemDto.ProjectId
+        };
+
+        _context.TaskItems.Add(taskItem);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetTaskItemById), new { id = taskItem.Id }, taskItem);
     }
 
-    [HttpPut]
-    public ActionResult<List<TaskItem>> UpdateTask([FromBody] TaskItem task)
+    
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateTaskItem(int id, [FromBody] TaskDTO taskItemDto)
     {
-        var index = tasks.FindIndex(u => u.Id == task.Id);
-        if (index == -1) return NotFound("Error: Task not found!");
+        if (taskItemDto == null)
+        {
+            return BadRequest("TaskItem data is required.");
+        }
 
-        tasks[index] = task;
-        return tasks;
+        var taskItem = await _context.TaskItems.FindAsync(id);
+
+        if (taskItem == null)
+        {
+            return NotFound("TaskItem not found.");
+        }
+
+        taskItem.TicketNumber = taskItemDto.TicketNumber;
+        taskItem.Title = taskItemDto.Title;
+        taskItem.Description = taskItemDto.Description;
+        taskItem.IsCompleted = taskItemDto.IsCompleted;
+        taskItem.DueDate = taskItemDto.DueDate;
+        taskItem.Priority = taskItemDto.Priority;
+        taskItem.AssigneId = taskItemDto.AssigneId;
+        taskItem.ProjectId = taskItemDto.ProjectId;
+
+        _context.TaskItems.Update(taskItem);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 
+    
     [HttpDelete("{id}")]
-    public ActionResult<List<TaskItem>> DeleteTask(int id)
+    public async Task<IActionResult> DeleteTaskItem(int id)
     {
-        var index = tasks.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("Error: Task not found!");
+        var taskItem = await _context.TaskItems.FindAsync(id);
 
-        tasks.RemoveAt(index);
-        return tasks;
+        if (taskItem == null)
+        {
+            return NotFound("TaskItem not found.");
+        }
+
+        _context.TaskItems.Remove(taskItem);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }
