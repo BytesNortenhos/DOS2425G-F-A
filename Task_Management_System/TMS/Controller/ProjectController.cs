@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TMS.Models;
 
 namespace TMS.Controller;
@@ -7,68 +8,95 @@ namespace TMS.Controller;
 [Route("api/[controller]")]
 public class ProjectController : ControllerBase
 {
-    private static List<Project> projects = new List<Project> {
-        new Project { Id = 1, Name = "Project 1", Description = "Sistema de Gerenciamento de Tarefas", StartDate = DateTime.Parse("2023-01-01"), EndDate = DateTime.Parse("2023-12-31"), Tasks = new List<TaskItem> { new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" } }, new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" } } } },
-        new Project { Id = 2, Name = "Project 2", Description = "Aplicativo de Fitness", StartDate = DateTime.Parse("2023-02-01"), EndDate = DateTime.Parse("2023-11-30"), Tasks = new List<TaskItem> { new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" } }, new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" } } } },
-        new Project { Id = 3, Name = "Project 3", Description = "Plataforma de E-commerce", StartDate = DateTime.Parse("2023-03-01"), EndDate = DateTime.Parse("2023-10-31"), Tasks = new List<TaskItem> { new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" } }, new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" } } } },
-        new Project { Id = 4, Name = "Project 4", Description = "Ferramenta de Análise", StartDate = DateTime.Parse("2023-04-01"), EndDate = DateTime.Parse("2023-09-30"), Tasks = new List<TaskItem> { new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" } }, new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" } } } },
-        new Project { Id = 5, Name = "Project 5", Description = "Sistema de Gestão de Inventário", StartDate = DateTime.Parse("2023-05-01"), EndDate = DateTime.Parse("2023-08-31"), Tasks = new List<TaskItem> { new TaskItem { Id = 1, TicketNumber = "001", Title = "Task 1", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(1), Priority = "High", Assigne = new User { Id = 1, UserName = "user1", Email = "1@x.com", FullName = "User 1", Role = "Admin" } }, new TaskItem { Id = 2, TicketNumber = "002", Title = "Task 2", Description = "Aaa", IsCompleted = false, DueDate = DateTime.Now.AddDays(2), Priority = "Low", Assigne = new User { Id = 1, UserName = "user2", Email = "2@x.com", FullName = "User 1", Role = "Dev" } } } },
-    };
+    private readonly AppDbContext _context;
 
+    public ProjectController(AppDbContext context)
+    {
+        _context = context;
+    }
 
     [HttpGet]
-    public ActionResult<List<Project>> GetProjects()
+    public async Task<ActionResult<IEnumerable<Project>>> GetProjects()
     {
-        return projects;
+        var projects = await _context.Projects.ToListAsync();
+        return Ok(projects);
     }
 
     [HttpGet("{id}")]
-    public ActionResult<Project> GetProject(int id)
+    public async Task<ActionResult<Project>> GetProjectById(int id)
     {
-        var index = projects.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("Error: Project not found!");
+        var project = await _context.Projects.FindAsync(id);
 
-        return projects[index];
+        if (project == null)
+        {
+            return NotFound("Project not found.");
+        }
+
+        return Ok(project);
     }
 
     [HttpPost]
-    public ActionResult<List<Project>> CreateProject([FromBody] Project project)
+    public async Task<IActionResult> CreateProject([FromBody] ProjectDTO projectDTO)
     {
-        try
+        if (projectDTO == null)
         {
-            projects.Add(project);
-        }
-        catch
-        {
-            return null;
+            return BadRequest("Project data is required.");
         }
 
-        return Created("Project created!", projects);
+        var project = new Project
+        {
+            ProjectName = projectDTO.ProjectName,
+            Description = projectDTO.Description,
+            StartDate = projectDTO.StartDate,
+            EndDate = projectDTO.EndDate
+        };
+
+        _context.Projects.Add(project);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, project);
     }
 
-    [HttpPut]
-    public ActionResult<List<Project>> UpdateProject([FromBody] Project project)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProject(int id, [FromBody] ProjectDTO projectDTO)
     {
-        var index = projects.FindIndex(u => u.Id == project.Id);
-        if (index == -1) return NotFound("Error: Project not found!");
+        if (projectDTO == null)
+        {
+            return BadRequest("Project data is required.");
+        }
 
-        projects[index] = project;
-        return projects;
+        var project = await _context.Projects.FindAsync(id);
+
+        if (project == null)
+        {
+            return NotFound("Project not found.");
+        }
+
+        // Atualizar os campos do project
+        project.ProjectName = projectDTO.ProjectName;
+        project.Description = projectDTO.Description;
+        project.StartDate = projectDTO.StartDate;
+        project.EndDate = projectDTO.EndDate;
+
+        _context.Projects.Update(project);
+        await _context.SaveChangesAsync();
+
+        return NoContent(); // Retorna 204 No Content, indica sucesso na atualização
     }
 
     [HttpDelete("{id}")]
-    public ActionResult<List<Project>> DeleteProject(int id)
+    public async Task<IActionResult> DeleteProject(int id)
     {
-        var index = projects.FindIndex(u => u.Id == id);
-        if (index == -1) return NotFound("Error: Project not found!");
+        var project = await _context.Projects.FindAsync(id);
 
-        projects.RemoveAt(index);
-        return projects;
+        if (project == null)
+        {
+            return NotFound("Project not found.");
+        }
+
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+
+        return NoContent(); // Retorna 204 No Content, indica que o project foi excluído
     }
-
-
-
-
-
-
 }
