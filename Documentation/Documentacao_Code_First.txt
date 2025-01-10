@@ -1,0 +1,32 @@
+O trabalho prático desta semana teve como objetivo a criação de uma base de dados utilizando a abordagem Code-First. Para alcançar este objetivo, realizámos uma série de etapas detalhadas:
+
+Iniciámos o processo com a instalação das seguintes dependências necessárias:
+
+Install-Package Microsoft.EntityFrameworkCore
+Install-Package Microsoft.EntityFrameworkCore.Tools
+Install-Package Microsoft.EntityFrameworkCore.SqlServer
+
+No próximo passo foi decidido criar os DTOs com base nos models já existentes, permitindo um controlo mais eficaz sobre como os dados são enviados e recebidos pela aplicação.
+
+Após isso desenvolvemos a classe DbContext, responsável por definir as entidades e especificar as interações com a base de dados. Essa classe é fundamental para o mapeamento entre o modelo da aplicação e as tabelas da base de dados. Paralelamente, configuramos a string de conexão no arquivo appsettings.json. Embora armazenar strings de conexão diretamente nesse arquivo não seja uma boa prática em ambientes de produção, neste caso específico, considerando que o programa é de uso privado e remoto, essa abordagem não apresenta riscos significativos. Por fim, utilizamos a string de conexão definida para configurar o DbContext, garantindo que a aplicação possa se comunicar adequadamente com a base de dados.
+
+Com os passos anteriores concluídos, avançámos para a criação das migrations. Utilizámos o comando:
+
+dotnet ef migrations add [nomeDaMigration]
+
+Este comando gerou dois ficheiros principais:
+Classe de Migração: Contém as instruções necessárias para aplicar (método Up) e reverter (método Down) as alterações na base de dados.
+Ficheiro de Snapshot: Representa uma visão completa e atualizada do modelo da base de dados, baseada no código atual.
+
+Finalmente, aplicámos as migrations na base de dados utilizando o comando:
+
+dotnet ef database update
+
+Após esta execução, verificámos no SQL Server que as tabelas foram criadas com sucesso, confirmando o funcionamento correto do processo.
+
+Após a implementação de todas as alterações, os controllers foram atualizados para operar com a base de dados. Da mesma forma, os testes foram ajustados utilizando o framework XUnit.
+
+Como alternativa estudada temos:
+
+[Abordagem Model-First]
+Neste caso, seria criado um diagrama de modelo (usando ferramentas como Entity Framework Designer) que define visualmente as entidades, relacionamentos e propriedades. O EF gera o código e os scripts SQL para criar a base de dados.
