@@ -1,0 +1,19 @@
+Como tarefa desta semana foi exigido gerar um Dockerfile e executar o Docker container.
+
+Primeiro passo a ser executado é a criação do ficheiro na raiz do projeto com o nome de "Dockerfile".
+Após isso colocamos o conteúdo, sendo esse conteúdo:
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build (define a imagem para a construção 'build')
+WORKDIR /app (Define o diretório do trabalho dentro do contêiner como /app)
+COPY *.csproj ./ (Copia todos os ficheiros com extensão .csproj da máquina local para o diretório de trabalho do contêiner (/app))
+RUN dotnet restore (Executa o comando dotnet restore, que baixa e resolve todas as dependências do projeto com base no(s) arquivo(s) .csproj
+COPY . ./ (Copia todos os ficheiros do diretório local para o diretório de trabalho do contêiner (/app).)
+RUN dotnet publish -c Release -o /out (Compila o projeto no modo livre)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 (Define a imagem base para a etapa final.)
+WORKDIR /app
+COPY --from=build /out . (Copia os arquivos compilados da etapa build (diretório /out) para o diretório de trabalho atual (/app))
+ENTRYPOINT ["dotnet", "TMS.dll"] (Define o comando que será executado ao iniciar o contêiner. Aqui, o comando executará o arquivo TMS.dll que usa o runtime .NET com o comando dotnet.)
+
+Após o ficheiro estar configurado executamos o comando: docker build -t [Nome da imagem]. Este comando irá construir a imagem Docker.
+
+Após isso executamos o container com o comando: docker run -d -p 8050:8050 [Nome da imagem].
