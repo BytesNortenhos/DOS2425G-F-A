@@ -1,0 +1,21 @@
+O desafio desta semana consistiu na criação de um docker-compose e na sua aplicação utilizando o Docker Desktop.
+
+Começámos por criar um ficheiro .yml com o nome docker-compose.yml. Dentro deste ficheiro, configurámos dois serviços principais: web e db.
+
+-> O serviço web representa a aplicação em si. No caso deste projeto, permite-nos visualizar o Swagger.
+-> O serviço db representa a base de dados que será utilizada pela aplicação.
+
+Após configurar o ficheiro, utilizámos o comando docker-compose up -d para iniciar os serviços em modo destacado (detached). Verificámos no Docker Desktop que os serviços foram criados e estão em execução conforme esperado.
+
+Com os serviços já iniciados, acedemos ao serviço de base de dados utilizando as credenciais configuradas no ficheiro docker-compose.yml. Dentro da base de dados, criámos uma nova 'database' que será utilizada pela aplicação.
+
+Com a base de dados criada, ajustámos ou criámos uma nova connectionString na aplicação. Esta connectionString contém as credenciais do serviço de base de dados configurado no docker-compose.yml. Certificámo-nos de que todos os dados necessários, como o nome do host, a porta, o nome da base de dados, o utilizador e a palavra-passe, estavam corretamente definidos.
+
+Por fim, executámos o processo de migration para a criação automática das tabelas na base de dados. Este passo garante que a estrutura necessária para a aplicação esteja devidamente implementada.
+
+Após a realização de todos estes passos é só testar os endpoints com o Swagger.
+
+Todo este processo poderia ser realizado (apesar de de forma mais complexa) através de scripts de inicialização utilizando o Docker CLI. Esta abordagem permite maior controle sobre cada etapa, mas exige mais trabalho manual.
+
+Além disso, verificámos que seria possível substituir o serviço de base de dados local (db) por serviços gerenciados em nuvem, como AWS RDS, Azure SQL Database ou Google Cloud SQL.
+
