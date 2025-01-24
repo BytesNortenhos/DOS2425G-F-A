@@ -1,0 +1,137 @@
+O objetivo desta semana foi a implementação do Jenkins e a configuração de um pipeline para executar automaticamente uma série de etapas do fluxo de desenvolvimento.
+
+Para atingir este objetivo, foi-nos disponibilizado um projeto no Bitbucket, onde pudemos aplicar todo o processo que será descrito a seguir.
+
+O primeiro passo foi realizar a instalação do Jenkins, a ferramenta principal que será utilizada para a execução do pipeline automatizado.
+
+Após isso, no ficheiro docker-compose.yml, configuramos três serviços principais solicitados:
+
+[Portainer]
+
+-> Configuramos a imagem correspondente ao Portainer.
+-> Atribuímos o nome ao container.
+-> Definimos as portas (9000) e os volumes associados.
+
+[Jenkins]
+
+-> Configuramos a imagem do Jenkins.
+-> Definimos o nome do container.
+-> Configuramos o utilizador como root.
+-> Especificamos as portas 8080 e 50000 (esta última para o agente).
+-> Atribuímos os volumes associados.
+
+[SonarQube]
+
+-> Configuramos a imagem do SonarQube.
+-> Definimos o nome do container.
+-> Especificamos as portas 9001.
+-> Configuramos as variáveis de ambiente, como URL, USERNAME e PASSWORD, que correspondem às credenciais de acesso.
+
+Após a configuração do ficheiro docker-compose.yml, executamos o comando docker-compose up -d para construir e iniciar os serviços.
+Verificamos no Docker Desktop a implementação dos containers para garantir que todos os serviços estavam em execução corretamente.
+
+Com os serviços implementados, acedemos ao Jenkins através do endereço localhost:8080.
+Após o login com as credenciais fornecidas, realizamos as seguintes configurações iniciais:
+
+[Instalação de Plugins]
+
+-> Acessamos Gerir Jenkins > Gerir Plugins e instalamos os plugins necessários para a integração com o SonarQube.
+
+[Configuração do SonarQube]
+
+Navegamos até Gerir Jenkins > Configurar Ferramentas > SonarQube Scanner.
+Configuramos a instalação automática do SonarQube Scanner e definimos a versão desejada.
+
+Após configurar o Jenkins, criamos o pipeline necessário para automatizar o processo de compilação, teste e publicação.
+
+"
+pipeline {
+    agent any
+
+    environment {
+        SONAR_SCANNER_HOME = tool 'SonarScanner' // Configuração do SonarQube
+        PATH = "${env.PATH}:C:/Program Files/dotnet" // Caminho do .NET SDK
+    }
+
+    stages {
+        stage('Verificar Instalação do .NET') {
+            steps {
+                echo 'Verificando a instalação do .NET SDK...'
+                bat 'dotnet --info' // Verifica se a CLI do .NET está a funcionar
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                echo 'A fazer checkout do repositório...'
+                git branch: 'main', url: 'https://bitbucket.org/ctespisep/ctesp_24_25_initial.git'
+            }
+        }
+
+        stage('Restaurar Dependências') {
+            steps {
+                echo 'A restaurar as dependências...'
+                dir('Task_Management_System/TMS') {
+                    bat 'dotnet restore'
+                }
+            }
+        }
+
+        stage('Compilar') {
+            steps {
+                echo 'A compilar o projeto...'
+                dir('Task_Management_System/TMS') {
+                    bat 'dotnet build --configuration Release'
+                }
+            }
+        }
+
+        stage('Testar') {
+            steps {
+                echo 'A executar os testes...'
+                dir('Task_Management_System/TMS') {
+                    bat 'dotnet test --configuration Release'
+                }
+            }
+        }
+
+        stage('Análise com SonarQube') {
+            steps {
+                echo 'Executando análise com SonarQube...'
+                dir('Task_Management_System/TMS') {
+                    bat "sonar-scanner.bat -Dsonar.projectKey=TMS -Dsonar.host.url=http://localhost:9001 -Dsonar.login= sqa_18d941d9461a2a451a925aaf5967643ecd44cbf6" 
+                }
+            }
+        }
+
+        stage('Publicar') {
+            steps {
+                echo 'A publicar o projeto...'
+                dir('Task_Management_System/TMS') {
+                    bat 'dotnet publish --configuration Release --output ./publish'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline concluído com sucesso!'
+        }
+        failure {
+            echo 'Pipeline falhou!'
+        }
+    }
+}
+"
+
+Com o script implementado, rodamos o pipeline no Jenkins.
+
+O pipeline executa todas as etapas conforme configurado:
+-> Verifica a instalação do .NET.
+-> Faz o checkout do repositório.
+-> Restaura as dependências.
+-> Compila o projeto.
+-> Executa os testes automatizados.
+-> Realiza a análise do código com o SonarQube.
+-> Publica o projeto.
