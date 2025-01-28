@@ -1,0 +1,67 @@
+[O que é orquestração em software?]
+
+A orquestração em software envolve a coordenação e a gestão de diferentes sistemas, aplicativos ou serviços, organizando múltiplas tarefas para executar processos e fluxos de trabalho em grande escala. Esses processos consistem em diversas atividades automatizadas e podem envolver diferentes sistemas.
+
+Com a orquestração, é possível simplificar e otimizar a execução de atividades realizadas com frequência (repetitivas), facilitando para as equipas o controlo das tarefas e fluxos de trabalho complexos. Como os processos podem ser replicados a qualquer momento e as tarefas são automatizadas, isso permite economizar tempo, aumentar a produtividade e evitar atividades redundantes.
+
+Pode-mos afirmar que nesta unidade corricular trabalhamos com algumas ferramentas que se encaixam no tema, como por exmeplo:
+
+-> (Docker-Desktop)
+
+Docker Desktop é uma plataforma para criar, empacotar e executar contêineres, mas por si só não realiza a orquestração diretamente.
+No entanto, Docker Swarm (que pode ser usado juntamente com o Docker Desktop) permite realizar a orquestração de múltiplos contêineres, incluindo escalonamento e gestão. Além disso, Docker Desktop é frequentemente usado como ponto de partida para integrar ferramentas de orquestração mais avançadas, como Kubernetes.
+
+-> (Jenkins)
+
+Jenkins é amplamente usado para orquestrar pipelines de integração contínua (CI) e entrega contínua (CD). Ele permite:
+	. Coordenar tarefas automatizadas, como build de código, testes, análise de qualidade (ex.: com o SonarQube), e deploy.
+	. Integrar com ferramentas como Docker e Kubernetes para orquestrar contêineres durante o pipeline.
+
+Jenkins pode ser configurado para criar imagens Docker, enviá-las para um repositório (ex.: Docker Hub) e orquestrar a sua implantação em um ambiente Kubernetes.
+
+-> (Portainer)
+
+O Portainer é uma interface gráfica que facilita o gerenciamento e a orquestração de contêineres Docker e clusters Kubernetes. Ele permite:
+	. Gerenciar stacks de contêineres (várias aplicações em execução juntas).
+	. Configurar e visualizar o status de serviços, redes e volumes.
+	. Integrar com Docker Swarm ou Kubernetes para lidar com a orquestração subjacente.
+
+[Quais são os benefícios do Kubernetes?]
+
+O Kubernetes é uma plataforma open-source voltada para a orquestração de contêineres, criada para automatizar a implantação (refere-se ao processo de disponibilizar uma aplicação ou serviço em um ambiente de produção ou outro ambiente), gestão e o escalonamento de aplicações em contêineres. 
+Possibilita a execução confiável de aplicativos em clusters distribuídos, assegura desta forma a alta disponibilidade, eficiência no uso de recursos e portabilidade. Tem à capacidade de simplificar a modernização de aplicações, assegura desta forma a arquiteturas de micros-serviços e ambientes híbridos ou multicloud.
+
+O Kubernetes oferece inúmeros benefícios para a gestão de aplicações em contêineres:
+
+-> Automação: Simplifica a gestão de aplicações com orquestração, recuperação automática e atualizações sem interrupções.
+-> Escalabilidade: Escala aplicações horizontal ou verticalmente com base na demanda (capacidade de ajustar a quantidade de recursos alocados para uma aplicação de acordo com a demanda de uso).
+-> Portabilidade: É compatível com múltiplos 'provedores' de nuvem e ambientes locais (permite que as aplicações sejam executadas de forma consistente e sem problemas, independentemente do ambiente de execução).
+-> Eficiência de Recursos: Otimiza a alocação e o uso de recursos do cluster.
+-> Alta Disponibilidade: Garante resiliência com balanceamento de carga e replicação.
+-> Observabilidade: Oferece suporte a ferramentas de monitoramento e rastreamento.
+-> Infraestrutura como Código: Usa arquivos declarativos (YAML/JSON) para configurar e automatizar implantações.
+
+[O que é um pod no Kubernetes]
+
+No Kubernetes, um Pod é a menor unidade de implantação e uma abstração que representa um grupo de um ou mais contêineres de aplicativos (como contêineres Docker), juntamente com os recursos compartilhados necessários para sua execução.
+
+Entre os recursos compartilhados por contêineres dentro de um Pod, destacam-se:
+
+-> Armazenamento compartilhado: Volumes que podem ser acessados por todos os contêineres no Pod;
+-> Rede: Endereço IP único para o Pod dentro do cluster Kubernetes;
+-> Configurações de execução: Versões das imagens dos contêineres e mapeamentos de portas.
+
+Os Pods funcionam como "hosts lógicos" para os aplicativos e são projetados para conter contêineres que necessitam de forte acoplamento. Por exemplo, um Pod pode hospedar um contêiner com uma aplicação Node.js, enquanto outro contêiner dentro do mesmo Pod fornece os dados que serão consumidos pela aplicação.
+Os contêineres de um Pod compartilham o mesmo endereço IP e intervalo de portas, sendo sempre co-localizados no mesmo nó, executado em um contexto compartilhado.
+
+Cada Pod é alocado em um nó específico do cluster e permanece ativo até que seja encerrado (conforme a política de reinicialização definida) ou excluído manualmente. Caso o nó onde o Pod esteja alocado apresente falhas, o Kubernetes automaticamente aloca réplicas idênticas do Pod em outros nós disponíveis no cluster, garantindo alta disponibilidade e continuidade da aplicação.
+
+[O que é um Minikube]
+
+O Minikube é uma ferramenta que permite executar um cluster Kubernetes localmente na nossa máquina. É projetado para ser leve e fácil de usar, sendo ideal para ambientes de desenvolvimento, testes e aprendizagem.
+
+Esta ferramenta tem o intuito de explorar conceitos do Kubernetes de forma prática e sem custos de infraestrutura. Ele oferece um ambiente simulado de Kubernetes que facilita testes rápidos e validação de configurações antes da implementação na produção.
+
+[Descreva o que entende por container]
+
+Containers são unidades de software que "empacotam" uma aplicação juntamente com todas as dependências necessárias para garantir uma execução consistente em qualquer ambiente. Oferecem uma solução leve, portátil e isolada, eliminando a necessidade de configurar sistemas operacionais completos para cada aplicação ou processo.
